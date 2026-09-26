@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔐 Escape Room Builder — Any Subject, Any Grade</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@400;600;700&display=swap');
+  :root{
+    --cyan:#00f0ff; --cyan-dim:#007a82;
+    --purple:#c840ff; --purple-dim:#6020a0;
+    --green:#39ff14; --amber:#ffb800; --red:#ff3860;
+    --bg0:#05080f; --bg1:#0a0e1a; --bg2:#0f1425; --bg3:#141c35; --bg4:#1a2340;
+    --text-muted:#7a88b0;
+    --font-title:'Orbitron','Segoe UI',monospace;
+    --font-body:'Rajdhani','Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:radial-gradient(circle at 50% 0%, var(--bg2), var(--bg0) 70%);
+    color:#fff;font-family:var(--font-body);min-height:100vh;
+  }
+  header{
+    padding:18px 22px;border-bottom:2px solid var(--bg4);
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
+  }
+  header h1{
+    font-family:var(--font-title);font-size:clamp(18px,3vw,26px);margin:0;
+    color:var(--cyan);letter-spacing:2px;
+    text-shadow:0 0 14px var(--cyan-dim);
+  }
+  header .sub{color:var(--text-muted);font-size:13px;letter-spacing:1px;margin-top:2px;}
+  main{max-width:820px;margin:0 auto;padding:22px;}
+  .screen{display:none;}
+  .screen.active{display:block;}
+  .card{
+    background:var(--bg2);border:1px solid var(--bg4);border-radius:16px;
+    padding:22px;margin-bottom:18px;box-shadow:0 8px 24px rgba(0,0,0,.4);
+  }
+  .card h2{
+    font-family:var(--font-title);font-size:16px;letter-spacing:1px;color:var(--purple);
+    margin-top:0;
+  }
+  label{display:block;font-size:14px;color:var(--text-muted);margin-bottom:6px;letter-spacing:.5px;}
+  .neon-input, textarea.neon-input{
+    width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--bg4);
+    background:var(--bg1);color:#fff;font-family:var(--font-body);font-size:15px;
+    font-weight:600;letter-spacing:.5px;
+  }
+  textarea.neon-input{min-height:60px;resize:vertical;}
+  .neon-input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,240,255,.15);}
+  .field{margin-bottom:14px;}
+  .lockcard{
+    background:var(--bg3);border:1px solid var(--bg4);border-radius:12px;padding:16px;margin-bottom:14px;
+    position:relative;
+  }
+  .lockcard .locknum{
+    font-family:var(--font-title);color:var(--amber);font-size:13px;letter-spacing:1px;margin-bottom:10px;
+  }
+  .removelock{
+    position:absolute;top:12px;right:12px;background:none;border:none;color:var(--red);
+    font-size:18px;cursor:pointer;font-weight:700;
+  }
+  .btn{
+    font-family:var(--font-title);font-size:13px;letter-spacing:1px;border:none;border-radius:10px;
+    padding:13px 22px;cursor:pointer;font-weight:700;color:#0a0e1a;
+  }
+  .btn-cyan{background:linear-gradient(135deg,var(--cyan-dim),var(--cyan));color:#04222a;}
+  .btn-purple{background:linear-gradient(135deg,var(--purple-dim),var(--purple));color:#fff;}
+  .btn-green{background:linear-gradient(135deg,#1a6b0c,var(--green));color:#06210a;}
+  .btn-ghost{background:var(--bg3);color:var(--text-muted);border:1px solid var(--bg4);}
+  .btn:hover{filter:brightness(1.15);transform:translateY(-1px);}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .notice{
+    font-size:13px;color:var(--text-muted);background:var(--bg1);border:1px dashed var(--bg4);
+    border-radius:10px;padding:10px 14px;margin-bottom:16px;
+  }
+  /* ---- gameplay ---- */
+  .hud{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+  .hud .step{font-family:var(--font-title);color:var(--cyan);font-size:14px;letter-spacing:1px;}
+  .hud .timer{font-family:var(--font-title);color:var(--amber);font-size:16px;letter-spacing:1px;}
+  .intro{color:var(--purple);font-style:italic;display:block;margin-bottom:16px;font-size:15px;line-height:1.5;}
+  .clue{background:var(--bg1);border-left:4px solid var(--purple);padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:15px;}
+  .clue b{color:var(--purple);}
+  .question{font-size:22px;font-weight:700;margin-bottom:20px;line-height:1.4;}
+  .inputrow{display:flex;gap:10px;margin-bottom:14px;}
+  .inputrow input{flex:1;font-family:var(--font-title);font-size:20px;letter-spacing:4px;text-align:center;}
+  .feedback{min-height:30px;font-weight:700;font-size:16px;margin-top:6px;}
+  .feedback.ok{color:var(--green);}
+  .feedback.bad{color:var(--red);}
+  .complete{text-align:center;padding:30px 10px;}
+  .complete .icon{font-size:60px;margin-bottom:10px;}
+  .complete .title{font-family:var(--font-title);font-size:24px;color:var(--green);letter-spacing:2px;margin-bottom:10px;}
+  .complete .stats{color:var(--text-muted);font-size:15px;line-height:1.6;margin-bottom:20px;}
+  .complete .stats b{color:#fff;}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>🔐 ESCAPE ROOM BUILDER</h1>
+    <div class="sub">Build your own escape room · any subject · any grade level</div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ===== EDITOR ===== -->
+  <section id="editor" class="screen active">
+    <div class="notice">⚠️ This content lives only in this browser tab — it is not saved when you close it. Keep the tab open to reuse it, or write it down elsewhere first.</div>
+
+    <div class="card">
+      <h2>Mission</h2>
+      <div class="field">
+        <label>Mission title</label>
+        <input class="neon-input" id="missionTitle" type="text" placeholder="e.g. Escape the Lost Laboratory">
+      </div>
+      <div class="field">
+        <label>Story / intro (optional — shown before the first lock)</label>
+        <textarea class="neon-input" id="missionIntro" placeholder="e.g. A strange blackout sealed the laboratory. You must solve 3 locks to escape before time runs out..."></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Locks (challenges, in order)</h2>
+      <div id="locksContainer"></div>
+      <div class="row">
+        <button class="btn btn-ghost" onclick="addLock()">+ Add lock</button>
+        <button class="btn btn-ghost" onclick="loadExample()">🎲 Load example</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <button class="btn btn-green" style="font-size:15px;padding:15px 28px;" onclick="startMission()">🔓 Start mission</button>
+      <span id="editorError" style="color:var(--red);margin-left:14px;font-size:14px;"></span>
+    </div>
+  </section>
+
+  <!-- ===== GAMEPLAY ===== -->
+  <section id="game" class="screen">
+    <div class="card">
+      <div class="hud">
+        <span class="step" id="hudStep">LOCK 1 OF 1</span>
+        <span class="timer" id="hudTimer">⏱ 00:00</span>
+      </div>
+      <div id="gameBody"></div>
+    </div>
+  </section>
+
+  <!-- ===== FINISH ===== -->
+  <section id="finish" class="screen">
+    <div class="card">
+      <div class="complete" id="finishBody"></div>
+      <div class="row" style="justify-content:center;">
+        <button class="btn btn-cyan" onclick="backToEditor()">↺ New mission</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ============ STATE ============ */
+let locks = [];
+let mission = {title:'', intro:''};
+let game = {current:0, errors:0, startTime:0, timerInt:null};
+
+/* ============ EDITOR: LOCKS ============ */
+function addLock(data){
+  const id = 'lk' + Math.random().toString(36).slice(2,9);
+  locks.push({id, clue: data?data.clue:'', question: data?data.question:'', code: data?data.code:'', hint: data?data.hint:''});
+  renderLocks();
+}
+function removeLock(id){
+  locks = locks.filter(l=>l.id!==id);
+  if(locks.length===0) addLock();
+  else renderLocks();
+}
+function updateLock(id, field, value){
+  const l = locks.find(l=>l.id===id);
+  if(l) l[field] = value;
+}
+function renderLocks(){
+  const box = document.getElementById('locksContainer');
+  box.innerHTML = locks.map((l,i)=>`
+    <div class="lockcard">
+      ${locks.length>1 ? `<button class="removelock" onclick="removeLock('${l.id}')" title="Remove">✕</button>` : ''}
+      <div class="locknum">🔒 LOCK ${i+1}</div>
+      <div class="field">
+        <label>Clue (the context students see before the question)</label>
+        <input class="neon-input" value="${esc(l.clue)}" oninput="updateLock('${l.id}','clue',this.value)" placeholder="e.g. The first lock hides a number that repeats in nature.">
+      </div>
+      <div class="field">
+        <label>Question / challenge</label>
+        <textarea class="neon-input" oninput="updateLock('${l.id}','question',this.value)" placeholder="e.g. How many sides does a hexagon have?">${esc(l.question)}</textarea>
+      </div>
+      <div class="row">
+        <div class="field" style="flex:1;min-width:160px;">
+          <label>Correct code (numbers only)</label>
+          <input class="neon-input" inputmode="numeric" value="${esc(l.code)}" oninput="updateLock('${l.id}','code',this.value.replace(/[^0-9]/g,''))" placeholder="e.g. 6">
+        </div>
+        <div class="field" style="flex:2;min-width:220px;">
+          <label>Hint (shown if they get it wrong)</label>
+          <input class="neon-input" value="${esc(l.hint)}" oninput="updateLock('${l.id}','hint',this.value)" placeholder="e.g. Hexa means six in Greek.">
+        </div>
+      </div>
+    </div>`).join('');
+}
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function loadExample(){
+  locks = [];
+  document.getElementById('missionTitle').value = 'The Lost Library Code';
+  document.getElementById('missionIntro').value = 'The librarian vanished and left behind 3 locks before the secret shelf. Solve all three to find the missing book.';
+  addLock({clue:'The first lock hides a number that repeats in nature.', question:'How many sides does a hexagon have?', code:'6', hint:'Hexa means six in Greek.'});
+  addLock({clue:'The second lock hides a word from our language.', question:'How many syllables are in the word "elephant"?', code:'3', hint:'Break it down: el-e-phant.'});
+  addLock({clue:'The last lock is a math lock.', question:'What is half of 48?', code:'24', hint:'Divide 48 by 2.'});
+}
+
+/* ============ START MISSION ============ */
+function startMission(){
+  const title = document.getElementById('missionTitle').value.trim();
+  const intro = document.getElementById('missionIntro').value.trim();
+  const err = document.getElementById('editorError');
+  if(!title){ err.textContent = 'Please give your mission a title.'; return; }
+  const incomplete = locks.some(l=>!l.clue.trim() || !l.question.trim() || !l.code.trim());
+  if(incomplete){ err.textContent = 'Every lock needs a clue, a question, and a code.'; return; }
+  err.textContent = '';
+  mission = {title, intro};
+  game = {current:0, errors:0, startTime:Date.now(), timerInt:null};
+  showScreen('game');
+  startTimer();
+  showLock(0);
+}
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function backToEditor(){
+  clearInterval(game.timerInt);
+  showScreen('editor');
+}
+
+/* ============ TIMER (counts up) ============ */
+function startTimer(){
+  clearInterval(game.timerInt);
+  game.timerInt = setInterval(()=>{
+    const secs = Math.floor((Date.now()-game.startTime)/1000);
+    const m = String(Math.floor(secs/60)).padStart(2,'0');
+    const s = String(secs%60).padStart(2,'0');
+    document.getElementById('hudTimer').textContent = '⏱ ' + m + ':' + s;
+  }, 1000);
+}
+function elapsedLabel(){
+  const secs = Math.floor((Date.now()-game.startTime)/1000);
+  const m = String(Math.floor(secs/60)).padStart(2,'0');
+  const s = String(secs%60).padStart(2,'0');
+  return m + ':' + s;
+}
+
+/* ============ SOUND ============ */
+let audioCtx;
+function beep(freq, dur){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.frequency.value = freq||880; o.connect(g); g.connect(audioCtx.destination);
+    g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    o.start(); o.stop(audioCtx.currentTime + (dur||0.15));
+  }catch(e){}
+}
+
+/* ============ GAMEPLAY: SHOW LOCK ============ */
+function showLock(idx){
+  const total = locks.length;
+  document.getElementById('hudStep').textContent = 'LOCK ' + (idx+1) + ' OF ' + total;
+  const l = locks[idx];
+  document.getElementById('gameBody').innerHTML = `
+    ${idx===0 && mission.intro ? `<em class="intro">${esc(mission.intro)}</em>` : ''}
+    <div class="clue"><b>CLUE:</b> ${esc(l.clue)}</div>
+    <div class="question">${esc(l.question)}</div>
+    <div class="inputrow">
+      <input class="neon-input" id="codeInput" type="text" inputmode="numeric" placeholder="••••" autocomplete="off">
+      <button class="btn btn-purple" onclick="checkCode(${idx})">UNLOCK 🔓</button>
+    </div>
+    <div class="feedback" id="feedback"></div>`;
+  const input = document.getElementById('codeInput');
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') checkCode(idx); });
+  setTimeout(()=>input.focus(), 60);
+}
+function checkCode(idx){
+  const l = locks[idx];
+  const val = document.getElementById('codeInput').value.trim();
+  const fb = document.getElementById('feedback');
+  if(!val) return;
+  if(val === l.code.trim()){
+    beep(880,0.18);
+    fb.className = 'feedback ok';
+    fb.textContent = '🔓 LOCK OPENED!';
+    setTimeout(()=>{
+      if(idx+1 < locks.length) showLock(idx+1);
+      else finishMission();
+    }, 1000);
+  } else {
+    game.errors++;
+    beep(220,0.25);
+    fb.className = 'feedback bad';
+    fb.textContent = '💡 Hint: ' + l.hint;
+  }
+}
+function finishMission(){
+  clearInterval(game.timerInt);
+  const perfect = game.errors===0;
+  const time = elapsedLabel();
+  document.getElementById('finishBody').innerHTML = `
+    <div class="icon">${perfect ? '🌟' : '✅'}</div>
+    <div class="title">${perfect ? 'PERFECT ESCAPE!' : 'MISSION COMPLETE!'}</div>
+    <div class="stats">
+      You opened all <b>${locks.length}</b> locks in «${esc(mission.title)}»<br>
+      Time: <b>${time}</b> · Mistakes: <b>${game.errors}</b>
+    </div>`;
+  showScreen('finish');
+}
+
+/* ============ INIT ============ */
+addLock();
+</script>
+</body>
+</html>
